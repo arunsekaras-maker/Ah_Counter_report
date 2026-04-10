@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Ah Counter Tally Sheet</title>
+<style>
+  body { font-family: Arial, sans-serif; padding: 20px; max-width: 900px; margin: auto; color: #333; }
+  h1 { text-align: center; color: #8B0000; font-size: 22px; margin-bottom: 2px; }
+  .subtitle { text-align: center; font-size: 13px; color: #555; margin-bottom: 6px; }
+  .meta { display: flex; gap: 30px; margin-bottom: 16px; flex-wrap: wrap; }
+  .meta div { flex: 1; min-width: 180px; }
+  .meta label { font-size: 12px; font-weight: bold; color: #555; display: block; margin-bottom: 2px; }
+  .meta input { border: none; border-bottom: 1.5px solid #999; width: 100%; font-size: 13px; padding: 2px 0; outline: none; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { background: #8B0000; color: white; padding: 8px 6px; text-align: center; }
+  th.left { text-align: left; padding-left: 10px; }
+  td { border: 1px solid #ccc; padding: 7px 6px; text-align: center; vertical-align: middle; }
+  td.name { text-align: left; padding-left: 10px; font-weight: bold; }
+  td input { border: none; width: 100%; text-align: center; font-size: 13px; outline: none; background: transparent; }
+  td.name input { text-align: left; font-weight: bold; }
+  tr:nth-child(even) { background: #fdf2f2; }
+  tr:hover { background: #fce8e8; }
+  .total-row td { background: #fff3cd; font-weight: bold; }
+  .notes { margin-top: 20px; }
+  .notes label { font-weight: bold; font-size: 13px; color: #8B0000; }
+  .notes textarea { width: 100%; height: 70px; border: 1px solid #ccc; border-radius: 4px; padding: 6px; font-size: 13px; resize: vertical; margin-top: 4px; }
+  .filler-ref { margin-top: 16px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 6px; padding: 12px; }
+  .filler-ref h3 { margin: 0 0 8px; font-size: 13px; color: #8B0000; }
+  .filler-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tag { background: #8B0000; color: white; padding: 3px 10px; border-radius: 12px; font-size: 12px; }
+  .btn-row { display: flex; gap: 10px; margin-top: 16px; justify-content: center; }
+  button { padding: 8px 22px; border: none; border-radius: 5px; cursor: pointer; font-size: 13px; font-weight: bold; }
+  .btn-print { background: #8B0000; color: white; }
+  .btn-clear { background: #555; color: white; }
+  .btn-print:hover { background: #a00; }
+  .btn-clear:hover { background: #333; }
+  @media print {
+    .btn-row, button { display: none; }
+    body { padding: 5px; }
+  }
+  .logo { text-align: center; font-size: 11px; color: #aaa; margin-bottom: 4px; letter-spacing: 2px; text-transform: uppercase; }
+</style>
+</head>
+<body>
+
+<div class="logo">🎤 Toastmasters International</div>
+<h1>Ah Counter Tally Sheet</h1>
+<div class="subtitle">Track filler words used during today's meeting</div>
+
+<div class="meta">
+  <div><label>Date</label><input type="text" placeholder="e.g. 05 March 2026" /></div>
+  <div><label>Club Name</label><input type="text" placeholder="Your club name" /></div>
+  <div><label>Meeting #</label><input type="text" placeholder="e.g. #142" /></div>
+  <div><label>Ah Counter Name</label><input type="text" placeholder="Your name" /></div>
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th class="left" style="width:18%">Speaker Name</th>
+      <th>Role</th>
+      <th>Ah / Um</th>
+      <th>So / But</th>
+      <th>You Know</th>
+      <th>Like</th>
+      <th>Actually</th>
+      <th>Basically</th>
+      <th>Right / OK</th>
+      <th>Other</th>
+      <th>TOTAL</th>
+    </tr>
+  </thead>
+  <tbody id="tallyBody">
+  </tbody>
+</table>
+
+<div class="filler-ref">
+  <h3>📌 Common Filler Words to Watch:</h3>
+  <div class="filler-tags">
+    <span class="tag">Ah</span><span class="tag">Um</span><span class="tag">Uh</span>
+    <span class="tag">Er</span><span class="tag">So</span><span class="tag">But</span>
+    <span class="tag">You Know</span><span class="tag">Like</span><span class="tag">Actually</span>
+    <span class="tag">Basically</span><span class="tag">Right</span><span class="tag">OK</span>
+    <span class="tag">Literally</span><span class="tag">Honestly</span><span class="tag">Clearly</span>
+  </div>
+</div>
+
+<div class="notes">
+  <label>📝 Notes / Observations:</label>
+  <textarea placeholder="Write any observations, notable improvements, or general feedback here..."></textarea>
+</div>
+
+<div class="btn-row">
+  <button class="btn-print" onclick="window.print()">🖨️ Print / Save as PDF</button>
+  <button class="btn-clear" onclick="clearSheet()">🗑️ Clear Sheet</button>
+</div>
+
+<script>
+  const cols = ['name','role','ah','so','youknow','like','actually','basically','right','other'];
+  const rolePlaceholders = ['Prepared Speaker','Table Topics','Evaluator','GE','TM of the Day','Timer','Grammarian','Guest'];
+
+  function calcTotal(row) {
+    const nums = ['ah','so','youknow','like','actually','basically','right','other'];
+    let t = 0;
+    nums.forEach(n => {
+      const v = parseInt(row.querySelector(`[data-col="${n}"]`).value) || 0;
+      t += v;
+    });
+    row.querySelector('.rowtotal').textContent = t || '';
+  }
+
+  function buildRows() {
+    const tbody = document.getElementById('tallyBody');
+    tbody.innerHTML = '';
+    for (let i = 1; i <= 15; i++) {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="name"><input data-col="name" placeholder="Speaker ${i}" /></td>
+        <td><input data-col="role" placeholder="${rolePlaceholders[(i-1)%rolePlaceholders.length]}" /></td>
+        <td><input data-col="ah" type="number" min="0" placeholder="0" /></td>
+        <td><input data-col="so" type="number" min="0" placeholder="0" /></td>
+        <td><input data-col="youknow" type="number" min="0" placeholder="0" /></td>
+        <td><input data-col="like" type="number" min="0" placeholder="0" /></td>
+        <td><input data-col="actually" type="number" min="0" placeholder="0" /></td>
+        <td><input data-col="basically" type="number" min="0" placeholder="0" /></td>
+        <td><input data-col="right" type="number" min="0" placeholder="0" /></td>
+        <td><input data-col="other" type="number" min="0" placeholder="0" /></td>
+        <td class="rowtotal" style="font-weight:bold;color:#8B0000;"></td>
+      `;
+      tr.querySelectorAll('input[type="number"]').forEach(inp => {
+        inp.addEventListener('input', () => calcTotal(tr));
+      });
+      tbody.appendChild(tr);
+    }
+  }
+
+  function clearSheet() {
+    if (confirm('Clear all data?')) {
+      document.querySelectorAll('input, textarea').forEach(el => el.value = '');
+      document.querySelectorAll('.rowtotal').forEach(el => el.textContent = '');
+    }
+  }
+
+  buildRows();
+</script>
+</body>
+</html>
